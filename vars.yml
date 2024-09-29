@@ -1,0 +1,6 @@
+---
+django_app_repo: "https://github.com/FOSSEE-Intern/ansible-nginx-gunicorn"
+app_dir: "/var/www/sysad_intern"
+gunicorn_start_script: "/etc/systemd/system/gunicorn.service"
+nginx_conf: "/etc/nginx/sites-available/sysad_intern"
+nginx_conf_link: "/etc/nginx/sites-enabled/sysad_intern"

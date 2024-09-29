@@ -1,0 +1,82 @@
+---
+- name: Deploy Django Application
+  hosts: app_vms
+  become: yes
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Install required packages
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      with_items:
+        - git
+        - python3-pip
+        - python3-venv
+        - nginx
+        - virtualenv
+
+### - name: Clone the Django application repository
+###   git:
+###     repo: "{{ django_app_repo }}"
+###     dest: "{{ app_dir }}"
+###     version: "main"
+
+    - name: Create a Python virtual environment
+      command: python3 -m venv {{ app_dir }}/venv
+      args:
+        creates: "{{ app_dir }}/venv"
+
+    - name: Install Python dependencies
+      pip:
+        requirements: "{{ app_dir }}/requirements.txt"
+        virtualenv: "{{ app_dir }}/venv"
+
+    - name: Create Gunicorn systemd service file
+      copy:
+        dest: "{{ gunicorn_start_script }}"
+        content: |
+          [Unit]
+          Description=gunicorn daemon
+          After=network.target
+
+          [Service]
+          User=root
+          Group=root
+          WorkingDirectory={{ app_dir }}
+          ExecStart={{ app_dir }}/venv/bin/gunicorn --access-logfile - --workers 3 --bind unix:{{ app_dir }}/sysad_intern.sock sysad_intern.wsgi:application
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start and enable Gunicorn service
+      systemd:
+        name: gunicorn
+        state: restarted
+        enabled: yes
+
+    - name: Remove default Nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Create Nginx configuration file for the Django app
+      template:
+        src: nginx.conf.j2
+        dest: "{{ nginx_conf }}"
+
+    - name: Create a symbolic link to enable the Nginx configuration
+      file:
+        src: "{{ nginx_conf }}"
+        dest: "{{ nginx_conf_link }}"
+        state: link
+
+    - name: Test Nginx configuration
+      command: nginx -t
+
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
+

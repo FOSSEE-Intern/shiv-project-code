@@ -1,0 +1,6 @@
+[app_vms]
+app-vm ansible_host=34.131.103.190  ansible_user=jenkins ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/id_rsa 
+
+[app_vms:vars]
+ansible_python_interpreter=/usr/bin/python3
+

@@ -1,0 +1,11 @@
+server {
+    listen 80;
+    server_name 34.131.218.104;
+    location = /favicon.ico { access_log off; log_not_found off; }
+        root /var/www/sysad_intern;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/sysad_intern/sysad_intern.sock;
+    }
+}
